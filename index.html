@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>মোবাইল বাইক রেসিং</title>
+    <title>মোবাইল বাইক রেসিং গেম</title>
     <style>
         /* CSS কোড: গেমের ডিজাইন */
         body {
@@ -12,27 +12,23 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background-color: #000;
+            background-color: #1a1a1a;
             color: #fff;
-            font-family: 'Press Start 2P', cursive;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
             overflow: hidden;
             user-select: none;
-            -webkit-user-select: none; /* Safari */
-            -ms-user-select: none; /* IE10+ */
-            touch-action: manipulation; /* টাচ ইভেন্টের জন্য */
+            touch-action: manipulation;
         }
-        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
         #game-container {
-            width: 90vmin; /* স্ক্রিনের প্রস্থের 90% */
-            max-width: 400px;
-            height: 80vh; /* স্ক্রিনের উচ্চতার 80% */
-            max-height: 700px;
-            background-color: #222;
-            border: 8px solid #555;
-            border-radius: 15px;
-            box-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
+            width: 95vw; /* স্ক্রিনের প্রস্থের 95% */
+            max-width: 450px;
+            height: 85vh; /* স্ক্রিনের উচ্চতার 85% */
+            background-color: #333;
+            border: 10px solid #555;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
             position: relative;
             overflow: hidden;
         }
@@ -49,7 +45,7 @@
             animation: road-scroll 0.5s infinite linear;
         }
         #side-lines {
-            background-image: linear-gradient(to right, #ccc 2px, transparent 2px), linear-gradient(to right, transparent 98%, #ccc 98%);
+            background-image: linear-gradient(to right, #ccc 4px, transparent 4px), linear-gradient(to right, transparent 98%, #ccc 98%);
             background-size: 100% 100%;
             animation: road-scroll 0.5s infinite linear;
         }
@@ -62,8 +58,7 @@
         #bike {
             width: 50px;
             height: 100px;
-            background-color: #f00;
-            background-image: radial-gradient(circle, #ff0000, #a00000);
+            background-color: #e74c3c;
             border-radius: 10px 10px 20px 20px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.5);
             position: absolute;
@@ -76,27 +71,53 @@
         .obstacle {
             width: 60px;
             height: 30px;
-            background-color: #ffff00;
-            background-image: linear-gradient(45deg, #ffff00 0%, #ffaa00 100%);
-            border: 2px solid #555;
+            background-color: #f1c40f;
+            border: 2px solid #333;
             border-radius: 5px;
-            box-shadow: 0 0 15px rgba(255, 255, 0, 0.6);
+            box-shadow: 0 0 15px rgba(241, 196, 15, 0.6);
             position: absolute;
             top: -50px;
             z-index: 2;
-            transition: transform 0.2s;
         }
 
         #score-display {
             position: absolute;
-            top: 20px;
-            left: 20px;
+            top: 15px;
+            left: 15px;
             font-size: 1.5em;
-            color: #ff0;
+            color: #f1c40f;
             text-shadow: 2px 2px 5px #000;
             z-index: 5;
         }
 
+        #controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            margin-top: 15px;
+            z-index: 10;
+        }
+        #controls button {
+            width: 150px;
+            padding: 12px 0;
+            font-size: 1.2em;
+            font-weight: bold;
+            background-color: #555;
+            color: #fff;
+            border: 2px solid #fff;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        #controls button:first-child {
+            margin-right: 20px;
+        }
+        #controls button:active {
+            transform: scale(0.95);
+            background-color: #777;
+        }
+        
         #message-box {
             position: absolute;
             top: 50%;
@@ -113,26 +134,22 @@
         }
         #message-box h2 {
             margin: 0 0 10px;
-            color: #ff0;
+            color: #f1c40f;
+            font-size: 1.8em;
         }
         #message-box p {
-            font-size: 1.2em;
+            font-size: 1.1em;
             margin: 0 0 20px;
         }
         #restart-btn {
             padding: 10px 20px;
             font-size: 1em;
-            font-family: 'Press Start 2P', cursive;
-            cursor: pointer;
-            background-color: #f00;
+            font-weight: bold;
+            background-color: #e74c3c;
             color: #fff;
             border: none;
             border-radius: 5px;
-        }
-
-        /* মোবাইল কন্ট্রোল অদৃশ্য করতে */
-        .controls {
-            display: none;
+            cursor: pointer;
         }
     </style>
 </head>
@@ -149,14 +166,20 @@
         </div>
     </div>
     
+    <div id="controls">
+        <button id="left-btn">বাম</button>
+        <button id="right-btn">ডান</button>
+    </div>
+
     <script>
-        // JavaScript কোড: গেমের লজিক
         const gameContainer = document.getElementById('game-container');
         const bike = document.getElementById('bike');
         const scoreDisplay = document.getElementById('score-display');
         const messageBox = document.getElementById('message-box');
         const finalScoreDisplay = document.getElementById('final-score');
         const restartBtn = document.getElementById('restart-btn');
+        const leftBtn = document.getElementById('left-btn');
+        const rightBtn = document.getElementById('right-btn');
         
         let bikePositionX = gameContainer.clientWidth / 2 - bike.clientWidth / 2;
         let score = 0;
@@ -225,7 +248,9 @@
                     
                     if (gameSpeed < maxSpeed) {
                         gameSpeed += 0.5;
-                        document.documentElement.style.setProperty('--game-speed', (0.5 / (gameSpeed / 5)) + 's');
+                        // গতি বাড়ার সাথে সাথে রাস্তার অ্যানিমেশনও দ্রুত হবে
+                        document.querySelector('#road-lines').style.animationDuration = (0.5 / (gameSpeed / 5)) + 's';
+                        document.querySelector('#side-lines').style.animationDuration = (0.5 / (gameSpeed / 5)) + 's';
                     }
                     obstacle.remove();
                     clearInterval(obstacleInterval);
@@ -260,6 +285,10 @@
                 moveBike('right');
             }
         });
+
+        // বোতাম কন্ট্রোল
+        leftBtn.addEventListener('click', () => moveBike('left'));
+        rightBtn.addEventListener('click', () => moveBike('right'));
 
         restartBtn.addEventListener('click', resetGame);
         
