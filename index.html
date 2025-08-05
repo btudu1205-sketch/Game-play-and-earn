@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
-    <title>Ultimate Bubble Shooter - Bubbles Fixed</title>
-    <meta name="description" content="Display bug fixed. With superior controls, smart snapping, and bounce aiming guide.">
+    <title>Ultimate Bubble Shooter - Advanced</title>
+    <meta name="description" content="An advanced version of the bubble shooter game with improved logic, graphics, and performance.">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -150,7 +150,7 @@
         const scoreEl = document.getElementById('score'), levelEl = document.getElementById('level'), nextBubbleContainer = document.getElementById('next-bubble-container'), gameOverModal = document.getElementById('gameOverModal'), finalScoreEl = document.getElementById('finalScore'), restartButton = document.getElementById('restartButton');
 
         let BUBBLE_RADIUS, SHOOT_SPEED;
-        let ROWS = 16, COLS = 15;
+        const ROWS = 16, COLS = 15;
         const BUBBLE_COLORS = ['#ff6347', '#4682b4', '#32cd32', '#ffd700', '#9932cc', '#ff8c00'];
         const POPS_FOR_NEW_ROW = 8;
         
@@ -461,7 +461,9 @@
                 neighbors.push({ r: r + 1, c: c - 1 });
                 neighbors.push({ r: r + 1, c: c });
             }
-            return neighbors.filter(n => n.r >= 0 && n.c >= 0 && n.r < ROWS && n.c < COLS);
+            
+            // Filter out-of-bounds neighbors
+            return neighbors.filter(n => n.r >= 0 && n.r < grid.length && n.c >= 0 && n.c < grid[n.r].length);
         }
 
         function addNewGridRow() {
@@ -477,7 +479,6 @@
         }
         
         function checkGameOver() {
-            // Game over condition: if any bubble reaches the bottom row
             for(let c = 0; c < grid[ROWS-1].length; c++){
                 if(grid[ROWS-1][c] !== null && grid[ROWS-1][c] !== undefined){
                     gameOver = true;
