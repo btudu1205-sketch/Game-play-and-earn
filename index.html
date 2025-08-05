@@ -292,6 +292,7 @@ document.addEventListener('DOMContentLoaded', () => {
         isShooting = false;
         let bestCoords = null;
 
+        // Try to find a spot next to the collided bubble first
         if (collidedBubble) {
             let minDist = Infinity;
             const neighbors = getNeighbors(collidedBubble.gridR, collidedBubble.gridC);
@@ -305,51 +306,32 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
             }
-        } else {
-            const hexRowHeight = BUBBLE_RADIUS * 2 * (3/4);
-            const r = Math.round((currentBubble.y - BUBBLE_RADIUS) / hexRowHeight);
-            const isOddRow = r % 2 === 1;
-            const c_offset = isOddRow ? BUBBLE_RADIUS : 0;
-            let c = Math.round((currentBubble.x - BUBBLE_RADIUS - c_offset) / (BUBBLE_RADIUS * 2));
-            
+        }
+
+        // If no spot found next to collided bubble, find the closest empty spot on the whole grid
+        if (!bestCoords) {
             let minDist = Infinity;
-            let foundSpot = false;
-            for (let row = Math.max(0, r - 1); row <= Math.min(ROWS - 1, r + 1); row++) {
-                const numCols = row % 2 === 1 ? COLS - 1 : COLS;
-                for (let col = 0; col < numCols; col++) {
-                    if (!grid[row] || grid[row][col] === undefined) {
-                        const pos = getBubblePosition(row, col);
+            for (let r = 0; r < grid.length; r++) {
+                const numCols = r % 2 === 1 ? COLS - 1 : COLS;
+                for (let c = 0; c < numCols; c++) {
+                    if (grid[r] && grid[r][c] === undefined) {
+                        const pos = getBubblePosition(r, c);
                         const dist = Math.sqrt(Math.pow(pos.x - currentBubble.x, 2) + Math.pow(pos.y - currentBubble.y, 2));
                         if (dist < minDist) {
                             minDist = dist;
-                            bestCoords = { r: row, c: col };
-                            foundSpot = true;
+                            bestCoords = { r: r, c: c };
                         }
                     }
-                }
-            }
-
-            if (!foundSpot) {
-                for(let row = 0; row < grid.length; row++){
-                    for(let col=0; col<grid[row].length; col++){
-                        if(grid[row][col] === undefined){
-                            bestCoords = { r: row, c: col };
-                            break;
-                        }
-                    }
-                    if(bestCoords) break;
                 }
             }
         }
           
-        if(bestCoords && grid[bestCoords.r] && grid[bestCoords.r][bestCoords.c] === undefined) {
+        if(bestCoords) {
             const { r, c } = bestCoords;
             grid[r][c] = currentBubble;
             currentBubble.isStatic = true;
             positionBubble(r, c);
             await handlePop(r, c);
-        } else {
-            // Discard the bubble if a valid spot can't be found
         }
 
         if (!gameOver) {
