@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
-    <title>Ultimate Bubble Shooter - Fixed</title>
-    <meta name="description" content="Bubble popping logic fixed.">
+    <title>Ultimate Bubble Shooter - Advanced</title>
+    <meta name="description" content="An advanced version of the bubble shooter game with improved logic, graphics, and performance.">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -300,7 +300,6 @@
                 let minDist = Infinity;
                 const neighbors = getNeighbors(collidedBubble.gridR, collidedBubble.gridC);
                 for (const n of neighbors) {
-                    // Check if neighbor position is valid and empty
                     if (n.r >= 0 && n.r < grid.length && n.c >= 0 && n.c < grid[n.r].length && grid[n.r][n.c] === undefined) {
                         const pos = getBubblePosition(n.r, n.c);
                         const dist = Math.sqrt(Math.pow(pos.x - currentBubble.x, 2) + Math.pow(pos.y - currentBubble.y, 2));
@@ -313,7 +312,7 @@
             } else { // Snap to top row
                 const hexRowHeight = BUBBLE_RADIUS * 2 * (3/4);
                 let closestR = Math.floor(currentBubble.y / hexRowHeight);
-                if (closestR < 0) closestR = 0; // Ensure it snaps to the first row
+                if (closestR < 0) closestR = 0;
                 
                 const isOddRow = closestR % 2 === 1;
                 const rowWidth = isOddRow ? COLS - 1 : COLS;
@@ -398,13 +397,13 @@
         function findFloating() {
             const connected = new Set();
             for(let c=0; c<COLS; c++){
-                if(grid[0]?.[c]){
+                if(grid[0] && grid[0][c]){
                     let toVisit = [{r: 0, c: c}]; connected.add(`0,${c}`);
                     while(toVisit.length > 0){
                         const curr = toVisit.pop();
                         getNeighbors(curr.r, curr.c).forEach(n => {
                             const key = `${n.r},${n.c}`;
-                            if(grid[n.r]?.[n.c] && !connected.has(key)){
+                            if(grid[n.r] && grid[n.r][n.c] && !connected.has(key)){
                                 connected.add(key); toVisit.push(n);
                             }
                         });
@@ -450,24 +449,22 @@
             const neighbors = [];
             const isOddRow = r % 2 === 1;
 
-            // Common neighbors
-            neighbors.push({ r: r, c: c - 1 });
-            neighbors.push({ r: r, c: c + 1 });
-            
-            // Neighbors for odd/even rows
             if (isOddRow) {
                 neighbors.push({ r: r - 1, c: c });
                 neighbors.push({ r: r - 1, c: c + 1 });
+                neighbors.push({ r: r, c: c - 1 });
+                neighbors.push({ r: r, c: c + 1 });
                 neighbors.push({ r: r + 1, c: c });
                 neighbors.push({ r: r + 1, c: c + 1 });
             } else {
                 neighbors.push({ r: r - 1, c: c - 1 });
                 neighbors.push({ r: r - 1, c: c });
+                neighbors.push({ r: r, c: c - 1 });
+                neighbors.push({ r: r, c: c + 1 });
                 neighbors.push({ r: r + 1, c: c - 1 });
                 neighbors.push({ r: r + 1, c: c });
             }
             
-            // Filter out-of-bounds neighbors
             return neighbors.filter(n => n.r >= 0 && n.r < grid.length && n.c >= 0 && n.c < grid[n.r].length);
         }
 
@@ -495,7 +492,16 @@
             }
         }
 
-        function drawGrid() { grid.forEach(row => row.forEach(bubble => bubble?.draw())); }
+        function drawGrid() { 
+            for(let r=0; r < grid.length; r++){
+                for(let c=0; c < grid[r].length; c++){
+                    if(grid[r][c]){
+                        grid[r][c].draw();
+                    }
+                }
+            }
+        }
+
         function drawPoppingBubbles() { for (let i = poppingBubbles.length - 1; i >= 0; i--) { poppingBubbles[i].popState++; poppingBubbles[i].draw(); if (poppingBubbles[i].popState > 10) poppingBubbles.splice(i, 1); } }
         function drawLauncherBase() { const y=canvas.height-2, x=canvas.width/2; ctx.beginPath();ctx.moveTo(x-40,y);ctx.quadraticCurveTo(x,y-30,x+40,y);ctx.strokeStyle='rgba(44,62,80,0.3)';ctx.lineWidth=4;ctx.stroke(); }
         function drawAimingLine() {
