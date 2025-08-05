@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
-    <title>Ultimate Bubble Shooter - Advanced</title>
-    <meta name="description" content="An advanced version of the bubble shooter game with improved logic, graphics, and performance.">
+    <title>Ultimate Bubble Shooter - Fixed</title>
+    <meta name="description" content="Bubble popping logic fixed.">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -300,7 +300,8 @@
                 let minDist = Infinity;
                 const neighbors = getNeighbors(collidedBubble.gridR, collidedBubble.gridC);
                 for (const n of neighbors) {
-                    if (n.r >= 0 && n.r < ROWS && grid[n.r]?.[n.c] === undefined) {
+                    // Check if neighbor position is valid and empty
+                    if (n.r >= 0 && n.r < grid.length && n.c >= 0 && n.c < grid[n.r].length && grid[n.r][n.c] === undefined) {
                         const pos = getBubblePosition(n.r, n.c);
                         const dist = Math.sqrt(Math.pow(pos.x - currentBubble.x, 2) + Math.pow(pos.y - currentBubble.y, 2));
                         if (dist < minDist) {
@@ -309,24 +310,28 @@
                         }
                     }
                 }
-            } else {
+            } else { // Snap to top row
                 const hexRowHeight = BUBBLE_RADIUS * 2 * (3/4);
                 let closestR = Math.floor(currentBubble.y / hexRowHeight);
-                let closestC = Math.round((currentBubble.x - BUBBLE_RADIUS - (closestR % 2 === 1 ? BUBBLE_RADIUS : 0)) / (BUBBLE_RADIUS * 2));
+                if (closestR < 0) closestR = 0; // Ensure it snaps to the first row
                 
-                if (closestR >= 0 && closestR < ROWS && closestC >= 0 && closestC < (closestR % 2 === 1 ? COLS - 1 : COLS)) {
-                    bestCoords = { r: closestR, c: closestC };
-                }
+                const isOddRow = closestR % 2 === 1;
+                const rowWidth = isOddRow ? COLS - 1 : COLS;
+                const c_offset = isOddRow ? BUBBLE_RADIUS : 0;
+                let closestC = Math.round((currentBubble.x - BUBBLE_RADIUS - c_offset) / (BUBBLE_RADIUS * 2));
+                
+                if (closestC < 0) closestC = 0;
+                if (closestC >= rowWidth) closestC = rowWidth - 1;
+                
+                bestCoords = { r: closestR, c: closestC };
             }
             
-            if(bestCoords && grid[bestCoords.r]) {
+            if(bestCoords && grid[bestCoords.r] && grid[bestCoords.r][bestCoords.c] === undefined) {
                 const { r, c } = bestCoords;
-                if(grid[r][c] === undefined) {
-                    grid[r][c] = currentBubble;
-                    currentBubble.isStatic = true;
-                    positionBubble(r, c);
-                    await handlePop(r, c);
-                }
+                grid[r][c] = currentBubble;
+                currentBubble.isStatic = true;
+                positionBubble(r, c);
+                await handlePop(r, c);
             }
             
             if (!gameOver) {
@@ -381,7 +386,7 @@
                 matches.push(curr);
                 getNeighbors(curr.r, curr.c).forEach(n => {
                     const key = `${n.r},${n.c}`;
-                    if (!visited.has(key) && grid[n.r]?.[n.c]?.color === color) {
+                    if (grid[n.r] && grid[n.r][n.c] && !visited.has(key) && grid[n.r][n.c].color === color) {
                         visited.add(key); 
                         toVisit.push(n);
                     }
