@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>আল্টিমেট বাইক রেসিং গেম</title>
+    <title>মোবাইল বাইক রেসিং</title>
     <style>
         /* CSS কোড: গেমের ডিজাইন */
         body {
@@ -17,15 +17,20 @@
             font-family: 'Press Start 2P', cursive;
             margin: 0;
             overflow: hidden;
-            user-select: none; /* যাতে টেক্সট সিলেক্ট করা না যায় */
+            user-select: none;
+            -webkit-user-select: none; /* Safari */
+            -ms-user-select: none; /* IE10+ */
+            touch-action: manipulation; /* টাচ ইভেন্টের জন্য */
         }
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
         #game-container {
-            width: 400px;
-            height: 700px;
+            width: 90vmin; /* স্ক্রিনের প্রস্থের 90% */
+            max-width: 400px;
+            height: 80vh; /* স্ক্রিনের উচ্চতার 80% */
+            max-height: 700px;
             background-color: #222;
-            border: 10px solid #555;
+            border: 8px solid #555;
             border-radius: 15px;
             box-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
             position: relative;
@@ -81,32 +86,6 @@
             z-index: 2;
             transition: transform 0.2s;
         }
-        .obstacle.hit {
-            background-color: #f00;
-            transform: scale(1.5);
-            opacity: 0;
-        }
-
-        .controls {
-            margin-top: 20px;
-            display: flex;
-            gap: 20px;
-        }
-        .controls button {
-            padding: 12px 30px;
-            font-size: 1.2em;
-            font-family: 'Press Start 2P', cursive;
-            background-color: #444;
-            color: #fff;
-            border: 2px solid #fff;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: transform 0.2s, background-color 0.2s;
-        }
-        .controls button:active {
-            transform: scale(0.95);
-            background-color: #666;
-        }
 
         #score-display {
             position: absolute;
@@ -150,6 +129,11 @@
             border: none;
             border-radius: 5px;
         }
+
+        /* মোবাইল কন্ট্রোল অদৃশ্য করতে */
+        .controls {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -164,11 +148,7 @@
             <button id="restart-btn">আবার শুরু করুন</button>
         </div>
     </div>
-    <div class="controls">
-        <button id="left-btn">বাম</button>
-        <button id="right-btn">ডান</button>
-    </div>
-
+    
     <script>
         // JavaScript কোড: গেমের লজিক
         const gameContainer = document.getElementById('game-container');
@@ -177,13 +157,11 @@
         const messageBox = document.getElementById('message-box');
         const finalScoreDisplay = document.getElementById('final-score');
         const restartBtn = document.getElementById('restart-btn');
-        const leftBtn = document.getElementById('left-btn');
-        const rightBtn = document.getElementById('right-btn');
         
         let bikePositionX = gameContainer.clientWidth / 2 - bike.clientWidth / 2;
         let score = 0;
         let isGameOver = false;
-        let gameSpeed = 5; // প্রাথমিক গতি
+        let gameSpeed = 5;
         const maxSpeed = 20;
 
         function updateBikePosition() {
@@ -236,7 +214,6 @@
                     bikeRect.bottom > obstacleRect.top
                 ) {
                     isGameOver = true;
-                    obstacle.classList.add('hit');
                     finalScoreDisplay.innerText = score;
                     messageBox.style.display = 'block';
                     clearInterval(obstacleInterval);
@@ -271,17 +248,21 @@
             createObstacle();
         }
 
-        leftBtn.addEventListener('click', () => moveBike('left'));
-        rightBtn.addEventListener('click', () => moveBike('right'));
-
-        // কীবোর্ড এবং টাচ-স্ক্রিনের জন্য ইভেন্ট লিসেনার
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowLeft') moveBike('left');
-            if (e.key === 'ArrowRight') moveBike('right');
+        // মোবাইল টাচ কন্ট্রোল
+        gameContainer.addEventListener('touchstart', (e) => {
+            const touchX = e.touches[0].clientX;
+            const containerLeft = gameContainer.getBoundingClientRect().left;
+            const containerWidth = gameContainer.clientWidth;
+            
+            if (touchX < containerLeft + containerWidth / 2) {
+                moveBike('left');
+            } else {
+                moveBike('right');
+            }
         });
 
         restartBtn.addEventListener('click', resetGame);
-
+        
         // গেম শুরু
         updateBikePosition();
         createObstacle();
