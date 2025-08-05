@@ -2,552 +2,180 @@
 <html lang="bn">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Ultimate Bubble Shooter - Final Fix</title>
-    <meta name="description" content="Bubble popping and snapping logic completely fixed.">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>বাইক রেসিং গেম</title>
     <style>
-        :root {
-            --primary-color: #ff6347; /* Tomato */
-            --secondary-color: #4682b4; /* SteelBlue */
-            --dark-color: #2c3e50;
-            --light-color: #ffffff;
-            --danger-color: #ff4757;
-            --background-gradient: linear-gradient(135deg, #ff7e5f, #feb47b); /* Sunset */
-        }
+        /* CSS কোড: গেমের ডিজাইন */
         body {
-            background: var(--background-gradient);
             display: flex;
-            align-items: center;
             justify-content: center;
-            min-height: 100vh;
+            align-items: center;
+            height: 100vh;
+            background-color: #222;
+            color: #fff;
+            font-family: Arial, sans-serif;
             margin: 0;
-            font-family: 'Hind Siliguri', sans-serif;
-            color: var(--dark-color);
             overflow: hidden;
         }
-        .game-wrapper {
+        #game-container {
+            width: 300px;
+            height: 500px;
+            background-color: #555;
+            border: 5px solid #fff;
+            position: relative;
+            overflow: hidden;
+        }
+        #road {
             width: 100%;
-            max-width: 900px;
-            padding: 15px;
+            height: 100%;
+            background: linear-gradient(to right, #444 10%, #333 10%, #333 90%, #444 90%);
+            position: absolute;
+            animation: road-move 2s infinite linear;
         }
-        .game-container {
-            display: flex;
-            flex-direction: row;
-            gap: 20px;
-            align-items: flex-start;
-            background: rgba(255, 255, 255, 0.2);
-            padding: 20px;
-            border-radius: 20px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-            backdrop-filter: blur(12px);
-            border: 1.5px solid rgba(255, 255, 255, 0.3);
+        @keyframes road-move {
+            from { background-position: 0 0; }
+            to { background-position: 0 100%; }
         }
-        #gameCanvas {
-            background: rgba(255, 255, 255, 0.6);
-            border-radius: 15px;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-            cursor: crosshair;
-            max-width: 100%;
-            height: auto;
+        #bike {
+            width: 30px;
+            height: 60px;
+            background-color: red;
+            position: absolute;
+            bottom: 20px;
+            left: calc(50% - 15px); /* মাঝখানে বাইক স্থাপন */
+            transition: left 0.2s ease-in-out;
         }
-        .game-info {
-            width: 200px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
+        .obstacle {
+            width: 40px;
+            height: 20px;
+            background-color: yellow;
+            position: absolute;
+            top: -30px;
+            left: 0;
+        }
+        #controls {
+            margin-top: 20px;
             text-align: center;
-            flex-shrink: 0;
         }
-        .info-box {
-            background: rgba(255, 255, 255, 0.6);
-            padding: 15px;
-            border-radius: 12px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-            border: 1px solid rgba(255, 255, 255, 0.7);
+        #controls button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 0 5px;
         }
-        .info-box h2 {
-            margin: 0 0 10px 0;
-            font-size: 1.1rem;
-            color: var(--dark-color);
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 24px;
+            font-weight: bold;
         }
-        .info-box svg { width: 20px; height: 20px; fill: var(--dark-color); opacity: 0.7; }
-        #score, #level { font-size: 2rem; font-weight: 700; color: var(--primary-color); }
-        #next-bubble-container {
-            width: 50px; height: 50px; margin: 10px auto 0;
-            border: 2px dashed var(--primary-color); border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-        }
-        #gameOverModal {
-            position: fixed; top: 50%; left: 50%;
-            transform: translate(-50%, -50%) scale(0.9);
-            background: rgba(44, 62, 80, 0.95); color: white;
-            padding: 40px; border-radius: 20px; text-align: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3); display: none;
-            transition: opacity 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-            opacity: 0; z-index: 100;
-        }
-        #gameOverModal.show { display: block; opacity: 1; transform: translate(-50%, -50%) scale(1); }
-        #gameOverModal h2 { font-size: 2.5rem; margin-bottom: 10px; }
-        #restartButton {
-            background: var(--primary-color); color: white; border: none;
-            padding: 15px 30px; border-radius: 10px; font-size: 1.2rem;
-            font-family: 'Hind Siliguri', sans-serif; cursor: pointer;
-            transition: background 0.3s, transform 0.2s;
-            box-shadow: 0 4px 15px rgba(255, 99, 71, 0.5);
-        }
-        #restartButton:hover { background: #e65a40; transform: translateY(-3px) scale(1.05); }
-        @media (max-width: 800px) {
-            .game-container { flex-direction: column; align-items: center; padding: 15px; }
-            .game-info { flex-direction: row; width: 100%; justify-content: space-around; }
-            .info-box { flex: 1; margin: 0 5px; padding: 10px; }
-            .info-box h2 { font-size: 0.9rem; }
-            #score, #level { font-size: 1.5rem; }
+        #game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 30px;
+            display: none;
         }
     </style>
 </head>
 <body>
-<svg width="0" height="0" style="display:none;">
-    <defs>
-        <symbol id="icon-score" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.77 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z"/></symbol>
-        <symbol id="icon-level" viewBox="0 0 24 24"><path d="M3 18v-2h18v2H3zm0-5v-2h18v2H3zm0-5V6h18v2H3z"/></symbol>
-        <symbol id="icon-next" viewBox="0 0 24 24"><path d="M12 4c-4.41 0-8 3.59-8 8s3.59 8 8 8 8-3.59 8-8-3.59-8-8-8zm-1 12H9V8h2v8zm4 0h-2V8h2v8z"/></symbol>
-    </defs>
-</svg>
-
-<div class="game-wrapper">
-    <div class="game-container">
-        <canvas id="gameCanvas"></canvas>
-        <div class="game-info">
-            <div class="info-box"><h2><svg><use xlink:href="#icon-score"></use></svg>স্কোর</h2><div id="score">0</div></div>
-            <div class="info-box"><h2><svg><use xlink:href="#icon-level"></use></svg>লেভেল</h2><div id="level">1</div></div>
-            <div class="info-box"><h2><svg><use xlink:href="#icon-next"></use></svg>পরবর্তী</h2><div id="next-bubble-container"></div></div>
-        </div>
+    <div id="game-container">
+        <div id="road"></div>
+        <div id="bike"></div>
+        <div id="score">স্কোর: 0</div>
+        <div id="game-over">গেম শেষ!</div>
     </div>
-</div>
+    <div id="controls">
+        <button id="left-btn">বাম</button>
+        <button id="right-btn">ডান</button>
+    </div>
 
-<div id="gameOverModal">
-    <h2>গেম ওভার</h2>
-    <p>আপনার ফাইনাল স্কোর: <span id="finalScore">0</span></p>
-    <button id="restartButton">আবার খেলুন</button>
-</div>
+    <script>
+        // JavaScript কোড: গেমের লজিক
+        const bike = document.getElementById('bike');
+        const gameContainer = document.getElementById('game-container');
+        const scoreDisplay = document.getElementById('score');
+        const gameOverDisplay = document.getElementById('game-over');
+        const leftBtn = document.getElementById('left-btn');
+        const rightBtn = document.getElementById('right-btn');
 
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    const scoreEl = document.getElementById('score'), levelEl = document.getElementById('level'), nextBubbleContainer = document.getElementById('next-bubble-container'), gameOverModal = document.getElementById('gameOverModal'), finalScoreEl = document.getElementById('finalScore'), restartButton = document.getElementById('restartButton');
+        let bikePosition = 125; // গেম কন্টেইনারের মাঝখানে বাইকের প্রাথমিক অবস্থান (300px width / 2)
+        let score = 0;
+        let isGameOver = false;
 
-    let BUBBLE_RADIUS, SHOOT_SPEED;
-    const ROWS = 16, COLS = 15;
-    const BUBBLE_COLORS = ['#ff6347', '#4682b4', '#32cd32', '#ffd700', '#9932cc', '#ff8c00'];
-    const POPS_FOR_NEW_ROW = 8;
-      
-    let grid = [], poppingBubbles = [], currentBubble, nextBubble;
-    let score = 0, level = 1, popsCount = 0, frameCount = 0;
-    let isShooting = false, gameOver = false, audioCtx;
-    let mouse = { x: 0, y: 0 };
-      
-    class Bubble {
-        constructor(x, y, color, isStatic = true) {
-            this.x = x; this.y = y; this.color = color;
-            this.radius = BUBBLE_RADIUS; this.isStatic = isStatic;
-            this.vx = 0; this.vy = 0; this.popState = 0;
-            this.gridR = 0; this.gridC = 0;
-        }
-        draw() {
-            const r = (!this.isStatic && !isShooting) ? this.radius * (1 + Math.sin(frameCount * 0.1) * 0.05) : this.radius;
-            if (this.popState > 0) {
-                ctx.save(); ctx.globalAlpha = 1 - (this.popState / 10); ctx.beginPath(); ctx.fillStyle = this.color;
-                ctx.arc(this.x, this.y, r * (1.2 - this.popState / 10), 0, Math.PI * 2); ctx.fill(); ctx.restore(); return;
+        function moveBike(direction) {
+            if (isGameOver) return;
+            const step = 20;
+            if (direction === 'left' && bikePosition > 0) {
+                bikePosition -= step;
+            } else if (direction === 'right' && bikePosition < 270) {
+                bikePosition += step;
             }
-            ctx.save(); ctx.beginPath();
-            const grad = ctx.createRadialGradient(this.x, this.y, r, this.x, this.y, 0);
-            grad.addColorStop(0, this.color); grad.addColorStop(1, 'rgba(255,255,255,0.7)');
-            ctx.fillStyle = grad; ctx.arc(this.x, this.y, r, 0, Math.PI * 2); ctx.fill();
-            ctx.beginPath();
-            const lightGrad = ctx.createRadialGradient(this.x - r*0.4, this.y - r*0.5, 0, this.x - r*0.4, this.y - r*0.5, r*0.6);
-            lightGrad.addColorStop(0, 'rgba(255,255,255,0.8)'); lightGrad.addColorStop(1, 'rgba(255,255,255,0)');
-            ctx.fillStyle = lightGrad; ctx.arc(this.x - r*0.4, this.y - r*0.5, r*0.6, 0, Math.PI*2); ctx.fill();
-            ctx.restore();
+            bike.style.left = bikePosition + 'px';
         }
-    }
-      
-    function resizeGame() {
-        const containerWidth = canvas.parentElement.clientWidth;
-        const newCanvasWidth = Math.min(containerWidth, 520);
-        BUBBLE_RADIUS = newCanvasWidth / (COLS * 2);
-        SHOOT_SPEED = BUBBLE_RADIUS * 1.3;
-        canvas.width = COLS * BUBBLE_RADIUS * 2;
-        const hexRowHeight = BUBBLE_RADIUS * 2 * (3/4);
-        canvas.height = (ROWS) * hexRowHeight + BUBBLE_RADIUS + 30;
-        mouse.x = canvas.width / 2; mouse.y = 0;
-        init();
-    }
 
-    function init() {
-        grid = [];
-        for (let r = 0; r < 8; r++) {
-            grid[r] = [];
-            const numCols = r % 2 === 1 ? COLS - 1 : COLS;
-            for (let c = 0; c < numCols; c++) {
-                grid[r][c] = new Bubble(0, 0, getRandomColor());
-            }
-        }
-        positionAllBubbles();
-          
-        createShooterBubble();
-        score = 0; level = 1; popsCount = 0;
-        gameOver = false; isShooting = false; poppingBubbles = [];
-        updateUI();
-        gameOverModal.classList.remove('show');
-        if (!gameLoop.running) gameLoop();
-    }
+        function createObstacle() {
+            if (isGameOver) return;
 
-    function gameLoop() {
-        gameLoop.running = true;
-        if (gameOver) { gameLoop.running = false; return; }
-        frameCount++;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        drawLauncherBase();
-        drawGrid();
-        drawPoppingBubbles();
-        if (currentBubble && !isShooting) { drawAimingLine(); }
-        if (currentBubble) {
-            currentBubble.draw();
-            if (isShooting) updateProjectile();
-        }
-        requestAnimationFrame(gameLoop);
-    }
+            const obstacle = document.createElement('div');
+            obstacle.classList.add('obstacle');
+            const position = Math.random() * (260); // 300 - 40 (obstacle width)
+            obstacle.style.left = position + 'px';
+            gameContainer.appendChild(obstacle);
 
-    function createShooterBubble() {
-        const shooterY = canvas.height - BUBBLE_RADIUS - 10;
-        currentBubble = nextBubble || new Bubble(canvas.width / 2, shooterY, getRandomColor(), false);
-        currentBubble.x = canvas.width / 2; currentBubble.y = shooterY;
-        currentBubble.radius = BUBBLE_RADIUS;
-        nextBubble = new Bubble(0, 0, getRandomColor(), false);
-        drawNextBubble();
-    }
+            let obstacleTop = -30;
+            const obstacleInterval = setInterval(() => {
+                if (isGameOver) {
+                    clearInterval(obstacleInterval);
+                    return;
+                }
+                obstacleTop += 5; // বাধার গতি
+                obstacle.style.top = obstacleTop + 'px';
 
-    function drawNextBubble() {
-        nextBubbleContainer.innerHTML = '';
-        const nextBubbleCanvas = document.createElement('canvas');
-        nextBubbleCanvas.width = nextBubble.radius * 2;
-        nextBubbleCanvas.height = nextBubble.radius * 2;
-        const nextCtx = nextBubbleCanvas.getContext('2d');
-        nextBubbleContainer.appendChild(nextBubbleCanvas);
-        nextCtx.beginPath();
-        const grad = nextCtx.createRadialGradient(nextBubble.radius, nextBubble.radius, nextBubble.radius, nextBubble.radius, nextBubble.radius, 0);
-        grad.addColorStop(0, nextBubble.color); grad.addColorStop(1, 'rgba(255,255,255,0.7)');
-        nextCtx.fillStyle = grad;
-        nextCtx.arc(nextBubble.radius, nextBubble.radius, nextBubble.radius, 0, Math.PI * 2);
-        nextCtx.fill();
-    }
+                // সংঘর্ষ পরীক্ষা
+                if (obstacleTop > 450 && obstacleTop < 500) {
+                    const bikeRect = bike.getBoundingClientRect();
+                    const obstacleRect = obstacle.getBoundingClientRect();
 
-    function shoot() {
-        if (isShooting || !currentBubble || mouse.y > currentBubble.y - BUBBLE_RADIUS) return;
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        playSound('shoot');
-        const angle = Math.atan2(mouse.y - currentBubble.y, mouse.x - currentBubble.x);
-        currentBubble.vx = Math.cos(angle) * SHOOT_SPEED;
-        currentBubble.vy = Math.sin(angle) * SHOOT_SPEED;
-        isShooting = true;
-    }
-
-    async function updateProjectile() {
-        currentBubble.x += currentBubble.vx;
-        currentBubble.y += currentBubble.vy;
-        if (currentBubble.x < BUBBLE_RADIUS || currentBubble.x > canvas.width - BUBBLE_RADIUS) {
-            currentBubble.vx *= -1;
-            currentBubble.x = Math.max(BUBBLE_RADIUS, Math.min(canvas.width - BUBBLE_RADIUS, currentBubble.x));
-        }
-        if (currentBubble.y < BUBBLE_RADIUS) {
-            currentBubble.y = BUBBLE_RADIUS;
-            await snapBubble(null);
-            return;
-        }
-        for (let r = 0; r < grid.length; r++) {
-            for (let c = 0; c < grid[r].length; c++) {
-                const bubble = grid[r][c];
-                if (bubble) {
-                    const dx = currentBubble.x - bubble.x;
-                    const dy = currentBubble.y - bubble.y;
-                    if (Math.sqrt(dx * dx + dy * dy) < BUBBLE_RADIUS * 2) {
-                        await snapBubble(bubble);
-                        return;
+                    if (
+                        bikeRect.left < obstacleRect.right &&
+                        bikeRect.right > obstacleRect.left
+                    ) {
+                        isGameOver = true;
+                        gameOverDisplay.style.display = 'block';
+                        clearInterval(obstacleInterval);
+                        alert("গেম শেষ! আপনার স্কোর: " + score);
                     }
                 }
-            }
-        }
-    }
-      
-    async function snapBubble(collidedBubble) {
-        isShooting = false;
-        let bestCoords = null;
-        let minDist = Infinity;
 
-        // Step 1: Find the best empty spot near the collided bubble
-        if (collidedBubble) {
-            const neighbors = getNeighbors(collidedBubble.gridR, collidedBubble.gridC);
-            for (const n of neighbors) {
-                if (grid[n.r] && grid[n.r][n.c] === undefined) {
-                    const pos = getBubblePosition(n.r, n.c);
-                    const dist = Math.sqrt(Math.pow(pos.x - currentBubble.x, 2) + Math.pow(pos.y - currentBubble.y, 2));
-                    if (dist < minDist) {
-                        minDist = dist;
-                        bestCoords = n;
-                    }
+                if (obstacleTop > 500) {
+                    // বাধা স্ক্রিন থেকে বেরিয়ে গেছে, স্কোর বাড়ান
+                    score++;
+                    scoreDisplay.innerText = "স্কোর: " + score;
+                    obstacle.remove();
+                    clearInterval(obstacleInterval);
                 }
+            }, 50); // প্রতি ৫০ মিলিসেকেন্ডে বাধার অবস্থান আপডেট
+
+            if (!isGameOver) {
+                setTimeout(createObstacle, 2000); // প্রতি ২ সেকেন্ডে নতুন বাধা তৈরি
             }
         }
+
+        leftBtn.addEventListener('click', () => moveBike('left'));
+        rightBtn.addEventListener('click', () => moveBike('right'));
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') {
+                moveBike('left');
+            } else if (e.key === 'ArrowRight') {
+                moveBike('right');
+            }
+        });
         
-        // Step 2: If no spot found in Step 1, find the globally closest empty spot
-        if (!bestCoords) {
-            minDist = Infinity;
-            for (let r = 0; r < grid.length; r++) {
-                const numCols = r % 2 === 1 ? COLS - 1 : COLS;
-                for (let c = 0; c < numCols; c++) {
-                    if (grid[r] && grid[r][c] === undefined) {
-                        const pos = getBubblePosition(r, c);
-                        const dist = Math.sqrt(Math.pow(pos.x - currentBubble.x, 2) + Math.pow(pos.y - currentBubble.y, 2));
-                        if (dist < minDist) {
-                            minDist = dist;
-                            bestCoords = { r: r, c: c };
-                        }
-                    }
-                }
-            }
-        }
-          
-        if(bestCoords) {
-            const { r, c } = bestCoords;
-            grid[r][c] = currentBubble;
-            currentBubble.isStatic = true;
-            positionBubble(r, c);
-            await handlePop(r, c);
-        }
-
-        if (!gameOver) {
-            createShooterBubble();
-        }
-    }
-
-    async function handlePop(r, c) {
-         const matches = findMatches(r, c);
-         if (matches.length >= 3) {
-            playSound('pop');
-            score += matches.length * 10 * level;
-            popsCount++;
-            matches.forEach(pos => {
-                if(grid[pos.r] && grid[pos.r][pos.c]) {
-                    poppingBubbles.push(grid[pos.r][pos.c]);
-                    grid[pos.r][pos.c].popState = 1;
-                    grid[pos.r][pos.c] = undefined; 
-                }
-            });
-            await new Promise(resolve => setTimeout(resolve, 150));
-            const floating = findFloating();
-            if (floating.length > 0) {
-                playSound('pop');
-                score += floating.length * 20 * level;
-                floating.forEach(pos => {
-                    if(grid[pos.r] && grid[pos.r][pos.c]) {
-                        poppingBubbles.push(grid[pos.r][pos.c]);
-                        grid[pos.r][pos.c].popState = 1;
-                        grid[pos.r][pos.c] = undefined;
-                    }
-                });
-            }
-            if (popsCount >= POPS_FOR_NEW_ROW) {
-                addNewGridRow();
-                popsCount = 0;
-                level++;
-            }
-         }
-         updateUI();
-         checkGameOver();
-    }
-      
-    function findMatches(startR, startC) {
-        if (!grid[startR] || !grid[startR][startC]) return [];
-        const color = grid[startR][startC].color;
-        let toVisit = [{ r: startR, c: startC }];
-        let visited = new Set([`${startR},${startC}`]);
-        let matches = [];
-        while(toVisit.length > 0) {
-            const curr = toVisit.pop();
-            matches.push(curr);
-            getNeighbors(curr.r, curr.c).forEach(n => {
-                const key = `${n.r},${n.c}`;
-                if (grid[n.r] && grid[n.r][n.c] && !visited.has(key) && grid[n.r][n.c].color === color) {
-                    visited.add(key);
-                    toVisit.push(n);
-                }
-            });
-        }
-        return matches;
-    }
-      
-    function findFloating() {
-        const connected = new Set();
-        for(let c=0; c<COLS; c++){
-            if(grid[0] && grid[0][c]){
-                let toVisit = [{r: 0, c: c}]; connected.add(`0,${c}`);
-                while(toVisit.length > 0){
-                    const curr = toVisit.pop();
-                    getNeighbors(curr.r, curr.c).forEach(n => {
-                        const key = `${n.r},${n.c}`;
-                        if(grid[n.r] && grid[n.r][n.c] && !connected.has(key)){
-                            connected.add(key); toVisit.push(n);
-                        }
-                    });
-                }
-            }
-        }
-        const floating = [];
-        for (let r=0; r < grid.length; r++) {
-            for (let c=0; c < (grid[r] ? grid[r].length : 0); c++) {
-                if (grid[r][c] && !connected.has(`${r},${c}`)) {
-                    floating.push({r, c});
-                }
-            }
-        }
-        return floating;
-    }
-      
-    function getBubblePosition(r, c) {
-         const hexRowHeight = BUBBLE_RADIUS * 2 * (3/4);
-         const c_offset = r % 2 === 1 ? BUBBLE_RADIUS : 0;
-         const x = c * BUBBLE_RADIUS * 2 + BUBBLE_RADIUS + c_offset;
-         const y = r * hexRowHeight + BUBBLE_RADIUS;
-         return {x, y};
-    }
-
-    function positionBubble(r, c) {
-        if (!grid[r] || !grid[r][c]) return;
-        const pos = getBubblePosition(r, c);
-        grid[r][c].x = pos.x; grid[r][c].y = pos.y;
-        grid[r][c].gridR = r; grid[r][c].gridC = c;
-        grid[r][c].radius = BUBBLE_RADIUS;
-    }
-
-    function positionAllBubbles() {
-        for(let r=0; r < grid.length; r++) {
-            for(let c=0; c < (grid[r] ? grid[r].length : 0); c++) {
-                if (grid[r][c]) {
-                     positionBubble(r,c);
-                }
-            }
-        }
-    }
-
-    function getNeighbors(r, c) {
-        const neighbors = [];
-        const isOddRow = r % 2 === 1;
-        const directions = isOddRow ? [
-            [-1, 0], [-1, 1],
-            [0, -1], [0, 1],
-            [1, 0], [1, 1]
-        ] : [
-            [-1, -1], [-1, 0],
-            [0, -1], [0, 1],
-            [1, -1], [1, 0]
-        ];
-          
-        for (const [dr, dc] of directions) {
-            const nr = r + dr;
-            const nc = c + dc;
-            if (nr >= 0 && nr < grid.length && grid[nr] && nc >= 0 && nc < grid[nr].length) {
-                neighbors.push({ r: nr, c: nc });
-            }
-        }
-        return neighbors;
-    }
-
-    function addNewGridRow() {
-        const newRow = [];
-        const isOddRow = grid.length % 2 === 1;
-        const numCols = isOddRow ? COLS - 1 : COLS;
-        for(let c=0; c < numCols; c++) {
-            newRow.push(new Bubble(0,0,getRandomColor()));
-        }
-        grid.unshift(newRow);
-        if(grid.length > ROWS) grid.pop();
-        positionAllBubbles();
-    }
-      
-    function checkGameOver() {
-        for(let c = 0; c < (grid[ROWS-1] ? grid[ROWS-1].length : 0); c++){
-            if(grid[ROWS-1][c] !== undefined){
-                gameOver = true;
-                finalScoreEl.textContent = score;
-                gameOverModal.classList.add('show');
-                playSound('gameOver');
-                return;
-            }
-        }
-    }
-
-    function drawGrid() {
-        for(let r=0; r < grid.length; r++){
-            for(let c=0; c < (grid[r] ? grid[r].length : 0); c++){
-                if(grid[r][c]){
-                    grid[r][c].draw();
-                }
-            }
-        }
-    }
-
-    function drawPoppingBubbles() { for (let i = poppingBubbles.length - 1; i >= 0; i--) { poppingBubbles[i].popState++; poppingBubbles[i].draw(); if (poppingBubbles[i].popState > 10) poppingBubbles.splice(i, 1); } }
-    function drawLauncherBase() { const y=canvas.height-2, x=canvas.width/2; ctx.beginPath();ctx.moveTo(x-40,y);ctx.quadraticCurveTo(x,y-30,x+40,y);ctx.strokeStyle='rgba(44,62,80,0.3)';ctx.lineWidth=4;ctx.stroke(); }
-    function drawAimingLine() {
-        if(mouse.y > currentBubble.y - BUBBLE_RADIUS) return;
-        ctx.save(); ctx.beginPath(); ctx.setLineDash([3, 6]); ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(44, 62, 80, 0.6)';
-        let angle = Math.atan2(mouse.y - currentBubble.y, mouse.x - currentBubble.x), pos = {x: currentBubble.x, y: currentBubble.y};
-        ctx.moveTo(pos.x, pos.y);
-        const lineLength = 1000;
-        const step = 10;
-        for(let i=0; i<lineLength; i+=step) {
-            const nextX = pos.x + Math.cos(angle) * step;
-            if(nextX < BUBBLE_RADIUS || nextX > canvas.width - BUBBLE_RADIUS) {
-                ctx.lineTo(pos.x, pos.y);
-                pos.x = nextX < BUBBLE_RADIUS ? BUBBLE_RADIUS : canvas.width - BUBBLE_RADIUS;
-                angle = Math.PI - angle;
-                ctx.moveTo(pos.x, pos.y);
-            } else {
-                pos.x = nextX;
-                pos.y += Math.sin(angle) * step;
-            }
-            if(pos.y < BUBBLE_RADIUS) break;
-        }
-        ctx.lineTo(pos.x, pos.y); ctx.stroke(); ctx.restore();
-    }
-
-    function updateUI() { scoreEl.textContent = score; levelEl.textContent = level; }
-    function getRandomColor() { return BUBBLE_COLORS[Math.floor(Math.random() * BUBBLE_COLORS.length)]; }
-    function playSound(type){if(!audioCtx)return;const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g),g.connect(audioCtx.destination),g.gain.setValueAtTime(.1,audioCtx.currentTime),"shoot"===type?(o.type="sine",o.frequency.setValueAtTime(400,audioCtx.currentTime),g.gain.exponentialRampToValueAtTime(1e-4,audioCtx.currentTime+.2)):"pop"===type?(o.type="square",o.frequency.setValueAtTime(800,audioCtx.currentTime),g.gain.exponentialRampToValueAtTime(1e-4,audioCtx.currentTime+.1)):"gameOver"===type&&(o.type="sawtooth",o.frequency.setValueAtTime(200,audioCtx.currentTime),o.frequency.exponentialRampToValueAtTime(100,audioCtx.currentTime+.5),g.gain.exponentialRampToValueAtTime(1e-4,audioCtx.currentTime+.5)),o.start(audioCtx.currentTime),o.stop(audioCtx.currentTime+.5)}
-      
-    function handleInteractionMove(e){const t=canvas.getBoundingClientRect(),o=e.touches?e.touches[0].clientX:e.clientX,n=e.touches?e.touches[0].clientY:e.clientY;mouse.x=o-t.left,mouse.y=n-t.top}
-    function handleInteractionEnd(e){e.preventDefault(),mouse.y<currentBubble.y&&shoot()}
-
-    canvas.addEventListener('mousemove', handleInteractionMove);
-    canvas.addEventListener('click', handleInteractionEnd);
-    canvas.addEventListener('touchmove', handleInteractionMove, { passive: false });
-    canvas.addEventListener('touchend', handleInteractionEnd, { passive: false });
-    restartButton.addEventListener('click', resizeGame);
-    let resizeTimeout;
-    window.addEventListener('resize', () => { clearTimeout(resizeTimeout); resizeTimeout = setTimeout(resizeGame, 250); });
-      
-    resizeGame();
-});
-</script>
-
+        createObstacle();
+    </script>
 </body>
 </html>
